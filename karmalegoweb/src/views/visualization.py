@@ -1,3 +1,5 @@
+import ast
+import csv
 import os, json, shutil
 
 from flask import Blueprint, request, jsonify, make_response, current_app
@@ -71,6 +73,38 @@ def get_entities():
     return jsonify({"Entities": entities})
 
 
+@bp.route("/getVMapFileFromVisualization", methods=["POST"])
+@login_required
+def get_vmap_file_from_visualization():
+    """
+    :return:
+    404 (NOT FOUND) if:
+    # The entity file cannot be found.
+
+    200 (OK) if the file exists, Returns an entity file with the requested dataset id
+    """
+    visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
+    if visualization is None:
+        return "Could not found requested visualization", 400
+    dataset_name = visualization.dataset
+    if os.path.exists(os.path.join(current_app.config["DATASETS_ROOT"], dataset_name)):
+        try:
+            vmap_path = os.path.join(current_app.config["DATASETS_ROOT"], dataset_name ,"VMap.csv")
+            with open(vmap_path, "r") as fs:
+                reader = csv.reader(fs)
+                next(reader) 
+                data_dict = {}
+                for row in reader:
+                    key = row[0]
+                    value = row[1]
+                    data_dict[key] = value
+                return jsonify(data_dict)
+        except FileNotFoundError:
+            return jsonify({"message": "the current dataset file has no vmap file."}), 206
+    else:
+        return jsonify({"message": "the request VMap file cannot be found."}), 404
+
+
 @bp.route("/getStates", methods=["POST"])
 @login_required
 @validate_args(["visualization"])
@@ -78,6 +112,10 @@ def get_states():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
         return "Could not found requested visualization", 400
+
+    negative = models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+    if negative is not None:
+        return "Negative Dataset", 200
 
     path = os.path.join(
         current_app.config["DATASETS_ROOT"],
@@ -101,37 +139,57 @@ def initiate_tirps():
     visualization = models.Visualization.query.filter_by(id=request.form["visualization"]).first()
     if visualization is None:
         return "Could not found requested visualization", 400
+    
+    negative =  models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+    if negative is not None:
+        root_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            negative.discretization_name,
+            visualization.KL_id,
+            "negative_output.json"
+        )
 
-    root_path = os.path.join(
-        current_app.config["DATASETS_ROOT"],
-        visualization.dataset,
-        "visualizations",
-        visualization.id,
-        "chunks",
-        "root.json",
-    )
+        root = []
+        with open(root_path, "r") as fr:
+            lines = json.load(fr)
+            for line in lines:
+                root.append(line)
 
-    if not os.path.exists(root_path):
-        return "Visualization found but could not find the root file", 500
+        response = make_response(jsonify(root))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
+    else:
+        root_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            "visualizations",
+            visualization.id,
+            "chunks",
+            "root.json",
+        )
 
-    visualization_path = os.path.join(
-        current_app.config["DATASETS_ROOT"],
-        visualization.dataset,
-        "visualizations",
-        visualization.id,
-    )
-    states, _ = ParseOutputFile.parse_states_file(visualization_path)
-    root = []
-    with open(root_path, "r") as fr:
-        lines = json.load(fr)
-        for line in lines:
-            tirp_ob = tirp(None, None, None)
-            tirp_ob.from_json(line)
-            root.append(tirp_ob.to_old_tirp(states).__dict__)
+        if not os.path.exists(root_path):
+            return "Visualization found but could not find the root file", 500
 
-    response = make_response(jsonify({"Root": root}))
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    return response
+        visualization_path = os.path.join(
+            current_app.config["DATASETS_ROOT"],
+            visualization.dataset,
+            "visualizations",
+            visualization.id,
+        )
+        states, _ = ParseOutputFile.parse_states_file(visualization_path)
+        root = []
+        with open(root_path, "r") as fr:
+            lines = json.load(fr)
+            for line in lines:
+                tirp_ob = tirp(None, None, None)
+                tirp_ob.from_json(line)
+                root.append(tirp_ob.to_old_tirp(states).__dict__)
+
+        response = make_response(jsonify({"Root": root}))
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
 
 
 @bp.route("/getSubTree", methods=["POST"])

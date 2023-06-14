@@ -103,8 +103,12 @@ def get_data_on_dataset():
     disc_to_return = list(map(model_to_discretization, discretizations))
 
     karma_arr = []
+    negative_arr = []
     for curr_disc in discretizations:
         karma_arr.extend(models.karma_lego.query.filter_by(discretization=curr_disc).all())
+
+    for curr_disc in discretizations:
+        negative_arr.extend(models.negative_karma_lego.query.filter_by(discretization=curr_disc).all())
 
     def model_to_TIM(model):
         status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
@@ -123,10 +127,58 @@ def get_data_on_dataset():
             "VerticalSupport": str(model.min_ver_support),
             "status": {"finished": status.finished, "success": status.success},
         }
+    
+    def negative_to_TIM(model):
+        status = models.karmalego_status.query.filter_by(karmalego_id=model.id).first()
+        return {
+            "discId": model.discretization.id,
+            "BinsNumber": str(model.discretization.NumStates),
+            "InterpolationGap": str(model.discretization.InterpolationGap),
+            "MethodOfDiscretization": str(model.discretization.AbMethod),
+            "PAAWindowSize": str(model.discretization.PAA),
+            "karma_id": str(model.id),
+            "MaxGap": str(model.max_gap),
+            "VerticalSupport": str(model.min_ver_support),
+            "MaximumNegatives": str(model.maximum_negatives),
+            "ofo": str(model.ofo),
+            "as": str(model.a_s),
+            "bc": str(model.bc),
+            "status": {"finished": status.finished, "success": status.success},
+        }
 
     karma_to_return = list(map(model_to_TIM, karma_arr))
 
-    return jsonify({"disc": disc_to_return, "karma": karma_to_return})
+    negatives_to_return = list(map(negative_to_TIM, negative_arr))
+
+    return jsonify({"disc": disc_to_return, "karma": karma_to_return, "negative": negatives_to_return})
+    
+@bp.route("/getIsSequential", methods=["GET"])
+@validate_args(["datasetName"], False)
+def get_is_sequential_dataset():
+    """
+    This function returns all of the existing discretization and KL runs for a given dataset.
+    param id: the name of the dataset
+    :return:the data on a specific dataset
+    """
+    dataset_name = request.args.get("datasetName")
+    if check_for_authorization(g.user, dataset_name):
+        return jsonify({"message": "don't try to fool me, you don't own it!"}), 403
+    
+    file = dataset_name + ".ascii"
+
+    path = os.path.join(
+        current_app.config["DATASETS_ROOT"],
+        dataset_name,
+        file
+    )
+
+    def is_ascii_file(file_path):
+        print(file_path)
+        return os.path.exists(file_path)
+    
+    is_sequential = is_ascii_file(path)
+    
+    return jsonify({"answer": is_sequential})
 
 
 @bp.route("/incrementViews", methods=["POST"])
@@ -188,6 +240,8 @@ def deleteDataset():
     if discretizations is not None:
         for disc in discretizations:
             karmalegos = models.karma_lego.query.filter_by(discretization_name=disc.id)
+            if karmalegos is None:
+                karmalegos = models.negative_karma_lego.query.filter_by(discretization_name=disc.id)
             if karmalegos is not None:
                 karmalegos_objects += karmalegos
                 for kl in karmalegos:
@@ -346,24 +400,44 @@ def get_visualization_details():
     if visualization.KL_id is None:
         return "There is no visualization details on an imported dataset", 400
     karmalego = models.karma_lego.query.filter_by(id=visualization.KL_id).first()
-    discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
+    if karmalego is not None:
+        discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
 
-    karmalego_details = {
-        "min_ver_support": karmalego.min_ver_support,
-        "num_relations": karmalego.num_relations,
-        "max_gap": karmalego.max_gap,
-        "max_tirp_length": karmalego.max_tirp_length,
-        "index_same": karmalego.index_same,
-        "epsilon": karmalego.epsilon,
-    }
-    discretization_details = {
-        "paa": discretization.PAA,
-        "method": discretization.AbMethod,
-        "number_of_bins": discretization.NumStates,
-        "interpolation_gap": discretization.InterpolationGap,
-    }
+        karmalego_details = {
+            "min_ver_support": karmalego.min_ver_support,
+            "num_relations": karmalego.num_relations,
+            "max_gap": karmalego.max_gap,
+            "max_tirp_length": karmalego.max_tirp_length,
+            "index_same": karmalego.index_same,
+            "epsilon": karmalego.epsilon,
+        }
+        discretization_details = {
+            "paa": discretization.PAA,
+            "method": discretization.AbMethod,
+            "number_of_bins": discretization.NumStates,
+            "interpolation_gap": discretization.InterpolationGap,
+        }
 
-    return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+        return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+    
+    else:
+        karmalego = models.negative_karma_lego.query.filter_by(id=visualization.KL_id).first()
+        discretization = models.discretization.query.filter_by(id=karmalego.discretization_name).first()
+
+        karmalego_details = {
+            "min_ver_support": karmalego.min_ver_support,
+            "max_gap": karmalego.max_gap,
+            "maximun_negatives" : karmalego.maximum_negatives,
+        }
+        discretization_details = {
+            "paa": discretization.PAA,
+            "method": discretization.AbMethod,
+            "number_of_bins": discretization.NumStates,
+            "interpolation_gap": discretization.InterpolationGap,
+        }
+
+        return jsonify({"karmalego": karmalego_details, "discretization": discretization_details})
+
 
 
 def check_for_authorization(current_user, dataset_name):

@@ -3,10 +3,10 @@ from flask import Blueprint, request, g
 from karmalegoweb.src.preprocessing.preproccessing import preprocessing, preprocessins_results
 
 from karmalegoweb.src.views.error_handlers import validate_args
-
+from karmalegoweb.src import models
 from karmalegoweb.src.views.auth import login_required
 from karmalegoweb.src import tasks
-
+from karmalegoweb.src.preprocessing.negative_proccessing import negative_preprocessing
 
 bp = Blueprint("preprocessing", __name__, "/")
 
@@ -16,8 +16,14 @@ bp = Blueprint("preprocessing", __name__, "/")
 @validate_args(["kl_id"])
 def preprocess():
     kl_id = request.form["kl_id"]
-    process = preprocessing(kl_id)
-    result, _vis_id = process.start()
+
+    is_negative = models.negative_karma_lego.query.filter_by(id=kl_id).first()
+    if is_negative is not None:
+        process = negative_preprocessing(kl_id)
+        result, _vis_id = process.start_negative()
+    else:
+        process = preprocessing(kl_id)
+        result, _vis_id = process.start()
     message = "Visualization finished, unknown result"
     status = 200
     if result == preprocessins_results.GOOD:

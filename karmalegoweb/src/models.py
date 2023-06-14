@@ -113,6 +113,7 @@ class discretization(db.Model):
     GradientFile_name = db.Column(db.String(120))
     GradientWindowSize = db.Column(db.Integer)
     karma_lego = db.relationship("karma_lego", backref="discretization", lazy="subquery")
+    negative_karma_lego = db.relationship("negative_karma_lego", backref="discretization", lazy="subquery")
     dataset_Name = db.Column(
         db.String(150), db.ForeignKey("info_about_datasets.Name"), nullable=False
     )
@@ -161,3 +162,22 @@ class Visualization(db.Model):
     dataset = db.Column(db.String(150), db.ForeignKey("info_about_datasets.Name"))
     run = db.Column(db.String(150), db.ForeignKey("run.id"), nullable=False)
     KL_id = db.Column(db.String(150), db.ForeignKey("karma_lego.id"), nullable=True)
+
+
+class negative_karma_lego(db.Model):
+    """
+    This table holds all the info about the KarmaLego runs.
+    Its primary key is a unique KarmaLego ID
+    The output file(s) is/are stored separately in "Datasets/<Dataset Name>/<Disc Id>/<KL Id>/".
+    """
+
+    id = db.Column(db.String(150), primary_key=True)
+    min_ver_support = db.Column(db.Float, nullable=False)
+    max_gap = db.Column(db.Integer, nullable=False)
+    maximum_negatives = db.Column(db.Integer, nullable=False)
+    ofo = db.Column(db.Boolean, nullable=False)
+    a_s = db.Column(db.Boolean, nullable=False)
+    bc = db.Column(db.Boolean, nullable=False)
+    discretization_name = db.Column(
+        db.String(150), db.ForeignKey("discretization.id"), nullable=False
+    )

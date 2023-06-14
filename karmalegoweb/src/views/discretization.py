@@ -1,3 +1,5 @@
+from collections import defaultdict
+import csv
 import os, shutil
 
 from flask import current_app, Blueprint, request, jsonify, send_file, g
@@ -21,6 +23,7 @@ from karmalegoweb.src.discretization.concrete_builders.traditional_discretizatio
     td4c_entropy,
     td4c_entropy_ig,
     td4c_skl,
+    empty
 )
 
 
@@ -67,7 +70,7 @@ def add_new_disc():
     form = request.form
     files = request.files
 
-    paa = int(form["PAA"]) if "PAA" in form else None
+    paa = int(form["PAA"]) if "PAA" in form else 0
     abstraction_method = form["AbMethod"] if "AbMethod" in form else None
     interpolation_gap = int(form["InterpolationGap"]) if "InterpolationGap" in form else None
     dataset_name = form["datasetName"] if "datasetName" in form else None
@@ -128,6 +131,9 @@ def add_new_disc():
         elif abstraction_method == "Abstraction Per Property":
             builder = abstraction_per_property(dataset_name)
             result = builder.make(preprocessing_file, states_file, abstraction_method_file)
+        elif abstraction_method == "Sequential":
+            builder = empty(dataset_name)
+            result = builder.make()
 
         if not result[0]:
             return result[1], 400
@@ -135,6 +141,7 @@ def add_new_disc():
         discretization(
             list(files.keys()),
             abstraction_method == "Abstraction Per Property",
+            abstraction_method == "Sequential",
             dataset_name,
             builder.id,
             bins_names,
@@ -143,6 +150,7 @@ def add_new_disc():
             builder.disc_path,
             builder.dataset_path,
         )
+        
         # args = [
         #     list(files.keys()),
         #     abstraction_method == "Abstraction Per Property",
@@ -309,3 +317,4 @@ def delete_descritization():
     db.session.delete(descritization_status)
     db.session.commit()
     return "Deleted discretization successfully"
+

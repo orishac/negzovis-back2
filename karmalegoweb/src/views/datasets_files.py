@@ -2,7 +2,7 @@ import os
 
 from flask import request
 from flask import Blueprint, request, jsonify, current_app, send_file
-
+from karmalegoweb.src import models
 from karmalegoweb.src.views.auth import login_required
 from karmalegoweb.src import utils
 
@@ -100,8 +100,7 @@ def get_entities_file():
             return jsonify({"message": "the current dataset file has no entities file."}), 206
     else:
         return jsonify({"message": "the request Entities file cannot be found."}), 404
-
-
+    
 @bp.route("/getStatesFile", methods=["GET"])
 @login_required
 def get_states_file():

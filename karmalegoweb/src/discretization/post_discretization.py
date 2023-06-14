@@ -29,7 +29,7 @@ def name_bins(dataset_path, disc_path, request_files_names, is_per_property, bin
     states_path = os.path.join(disc_path, "states.csv")
     states_gradient_path = os.path.join(disc_path, "states_kb_gradient.csv")
     vmap_df = pd.read_csv(vmap_path)
-    
+
     if "GradientFile" in request_files_names:
         df = pd.read_csv(states_gradient_path)
     else:
@@ -68,6 +68,7 @@ def name_bins(dataset_path, disc_path, request_files_names, is_per_property, bin
             df.to_csv(states_gradient_path, index=False)
         else:
             df.to_csv(states_path, index=False)
+
             
 def process_kl_input(disc_path):
     for filename in os.listdir(disc_path):

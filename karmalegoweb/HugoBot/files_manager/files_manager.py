@@ -1,3 +1,5 @@
+from collections import defaultdict
+import csv
 import os
 from abc import ABC
 from functools import reduce
@@ -54,6 +56,9 @@ class FilesManager(ABC):
             )
         else:
             sts.to_csv(self.__get_symbolic_time_series_path(), index=False)
+            convert_to_negative(self.__get_symbolic_time_series_path())
+
+            
 
     def write_KL(self, symbolic_time_intervals):
         with open(self.__get_KL_path(), "w") as f:
@@ -268,3 +273,25 @@ class FilesManager(ABC):
         )
 
         return intervals_str
+
+
+def convert_to_negative(raw_data_path):
+    unsorted_dict = defaultdict(list)
+
+    with open(raw_data_path, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            entID, event, timestamp = row[0], row[1], row[2]
+            unsorted_dict[(entID, timestamp)].append(event)
+
+    sorted_dict = dict(sorted(unsorted_dict.items(), key=lambda x: (int(x[0][0]), int(x[0][1]))))
+
+    negative_path = os.path.join(raw_data_path, '..', 'negative.ascii')
+
+    with open(negative_path, 'w') as f:
+        for key, value in sorted_dict.items():
+            entID, timestamp = key[0], key[1]
+            f.write(f"{entID} {timestamp} {len(value)} {' '.join(value)} \n")
+
+    return True

@@ -78,6 +78,8 @@ def delete_dataset():
     for discretization in discretizations:
         models.discretization_status.query.filter_by(discretization_id=discretization.id).delete()
         tims = models.karma_lego.query.filter_by(discretization_name=discretization.id)
+        if tims is None:
+            tims = models.negative_karma_lego.query.filter_by(discretization_name=discretization.id)
         for tim in tims:
             models.karmalego_status.query.filter_by(karmalego_id=tim.id).delete()
 

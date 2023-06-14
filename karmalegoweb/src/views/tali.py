@@ -99,3 +99,13 @@ def get_descritization_method():
     # global api
     # return api.get_descritization_method()
     return ""
+
+@bp.route("/get_negative_data")  # descrite data loading
+def get_negative_data():
+    name = "Hepatitis_EFQ_3bins_class1_0.8_4_1.json"
+    return api.get_negative_data(dataset_name=name)
+
+@bp.route("/get_negative_variables")  # descrite data loading
+def get_negative_variables():
+    name = "Hepatitis_EFQ_3bins_variables.txt"
+    return api.get_negative_variables(dataset_name=name)

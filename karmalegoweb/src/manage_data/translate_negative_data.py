@@ -13,12 +13,6 @@ def karma_lego_to_visualization(karmalego_id):
 
 # Return None if a karmalego with the given id does not exists
 def karmalego_to_discretization(karmalego_id):
-    karmalego = models.karma_lego.query.filter_by(id=karmalego_id).first()
-    if not karmalego:
-        return None
-    return karmalego.discretization_name
-
-def negative_karmalego_to_discretization(karmalego_id):
     karmalego = models.negative_karma_lego.query.filter_by(id=karmalego_id).first()
     if not karmalego:
         return None

@@ -1,3 +1,4 @@
+import ast
 from flask import current_app, g
 from karmalegoweb.src.Visualization.Tali import Create_Indexes
 from karmalegoweb.src.Visualization.Tali import Read_KL_Output_File
@@ -216,3 +217,26 @@ def get_descritization_method(self):
     # json_data = self.raw_class.get_descritization_method(self.dataset_path)
     # return json_data
     return ""
+
+def get_negative_data(dataset_name):
+    directory = "negatives"
+    dataset_path = os.path.join(
+        current_app.config["DATASETS_ROOT"], directory, dataset_name
+    )
+    with open(dataset_path, "r") as file:
+        data = json.load(file)
+        return json.dumps(data)
+        
+
+def get_negative_variables(dataset_name):
+    directory = "negatives"
+    dataset_path = os.path.join(
+        current_app.config["DATASETS_ROOT"], directory ,dataset_name
+    )
+    with open(dataset_path, "r") as file:
+        content = file.read()
+        content = content[11:]
+        dictionary = ast.literal_eval(content)
+        return json.dumps(dictionary)
+        
+
