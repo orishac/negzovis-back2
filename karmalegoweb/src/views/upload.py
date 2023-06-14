@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Blueprint, current_app, request, jsonify
 
 from karmalegoweb.src import upload_manager
@@ -36,6 +37,7 @@ def upload():
     """
     # TODO: Validate uuid existese
     # TODO: Validate uuid ownership
+
     isSuccess, msg = upload_manager.upload_new_dataset(
         category=request.form["category"],
         dataset_name=request.form["datasetName"],
@@ -48,6 +50,48 @@ def upload():
     )
     status = 200 if isSuccess else 400
     return msg, status
+
+
+@bp.route("/upload_sequential", methods=["POST"])
+@login_required
+@validate_args(
+    [
+        "datasetName",
+        "description",
+        "publicPrivate",
+        "category",
+        "datasetSource",
+        "rawDataUuid",
+        "vmapUuid",
+    ]
+)
+def upload_sequential():
+    """
+    This function handles an upload of a new dataset.
+    :param datasetName - the name of the dataset, string
+    :param category - the category of the dataset, string
+    :param publicPrivate - wether it public or private, string
+    :param file - the dataset itself, csv
+    :param description - the description of the dataset, string
+    :param datasetSource - the source of the dataset, string
+    :return:
+    """
+    # TODO: Validate uuid existese
+    # TODO: Validate uuid ownership
+
+    isSuccess, msg = upload_manager.upload_new_sequential_dataset(
+        category=request.form["category"],
+        dataset_name=request.form["datasetName"],
+        dataset_source=request.form["datasetSource"],
+        description=request.form["description"],
+        entitiesUuid=request.form["entitiesUuid"] if "entitiesUuid" in request.form else None,
+        public_private=request.form["publicPrivate"],
+        rawDataUuid=request.form["rawDataUuid"],
+        vmapUuid=request.form["vmapUuid"],
+    )
+    status = 200 if isSuccess else 400
+    return msg, status
+
 
 
 @bp.route("/import_data", methods=["POST"])

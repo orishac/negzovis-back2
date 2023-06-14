@@ -97,6 +97,7 @@ class Config:
         "TD4C-Entropy": "td4c-entropy",
         "TD4C-Entropy-IG": "td4c-entropy-ig",
         "TD4C-SKL": "td4c-skl",
+        "Sequential": "empty"
     }
 
 
