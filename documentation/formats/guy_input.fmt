@@ -1,0 +1,21 @@
+root := {
+	{parametersLine}
+	{tirp}*
+}
+parametersLine := time_intervals_path=[input;path];min_ver_support=[min_ver_support;float];num_relations=[num_of_relations;3 | 7];max_gap=[max_gap;int];label=[label;?];epsilon=[epsilon;int];output_path=[output_path;path];incremental_output=[incremental_output;Bool];max_tirp_length=[max_tirp_length;int];num_comma=[num_comma;?];symbol_type=[symbol_type;?];skip_followers=[skip_followers;Bool];entity_ids_num=[entity_ids_num;?];index_same=[index_same;Bool];semicolon_end=[semicolon_end;Bool];need_one_sized=[need_one_sized;Bool];selected_variables=[selected_variables;list[?]];calc_offsets=[calc_offsets;Bool];print_instances=[print_instances;Bool];print_params=[print_params;Bool];filter_overlapping_grad_state=[filter_overlapping_grad_state;Bool];num_of_entities=[num_of_entities;int]
+tirp := {
+	[tirp_length;int] {symbols} {relations} [mean_duration;float] [mean_offset_from_start;float] [mean_offset_from_end;float] [vertical_support;int] [mean_horizontal_support;float] ([entity_id;int] {instance})*
+	({entity_window},)*{entity_window}
+}
+symbols := ([symbol;int]-)*
+relations := ([relation;< | m | o | f | c | = | s].)*
+instance := {interval}+ [duration;int] [offset_from_start;int] [offset_from_end;int]
+interval := [[start_interval;int]-[end_interval;int]]
+window := [[start_window;int], [end_window;int]]
+entity_window := [entity_id;str], {window}: [mean_duration;float] [mean_offset_from_start;float] [mean_offset_from_end;float]
+
+<--  Description -->
+start_window := The first time stamp of a specific entity
+end_window := The last time stamp of a specific entity
+instance := For every entity that the TIRP appears in, all instances of this TIRP described
+entity_window := For every entity, the mean duration and mean offsets are described for the specific TIRP

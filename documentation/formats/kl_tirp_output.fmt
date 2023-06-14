@@ -1,0 +1,15 @@
+root := {
+	{tirp_stats}
+	{entity}*
+	{entity_window_mean}*
+}
+tirp_stats := # [tirp_length;int] {symbols} {relations} [mean_duration;float] [mean_offset_start;float] [mean_offset_end;float] [vertical_support;int] [mean_horizontal_support;float]
+symbols := ([symbol;int]-)*
+relations := ([relation;< | m | o | f | c | = | s].)*
+intervals := ({interval},)*{interval}
+interval := [[start_interval;int]-[end_interval;int]]
+window := [[start_window;int], [end_window;int]]
+instances := ({instance};)*{instance}
+instance := {intervals} [duration;int] [offset_from_start;int] [offset_from_end;int]
+entity := [[entity_id;str],[entity_index:str]]: {instances}
+entity_window_mean := [entity_id;str],[entity_index:str], {window}: [mean_duration;float] [mean_offset_from_start;float] [mean_offset_from_end;float]
